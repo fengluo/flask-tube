@@ -60,3 +60,7 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+#Sublime Text
+*.sublime-project
+*.sublime-workspace
