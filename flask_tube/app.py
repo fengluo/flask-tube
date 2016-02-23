@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import inspect
 from werkzeug.utils import import_string, find_modules
 from flask import Flask, Blueprint
 
@@ -20,9 +21,8 @@ class App(Flask):
             import_name,
             instance_path=os.getcwd(),
             instance_relative_config=True)
-
         self.packages = packages if packages else []
-        self.extensions = extensions if extensions else []
+        self.exts = extensions if extensions else []
         self.middlewares = middlewares if middlewares else []
         self.errorhandlers = errorhandlers if errorhandlers else[]
 
@@ -39,7 +39,7 @@ class App(Flask):
             self.config.from_pyfile('config/production.conf')
             self.logger.info("Config: Production")
 
-        self.configure_extensions(self.extensions)
+        self.configure_extensions(self.exts)
         self.configure_middlewares(self.middlewares)
         self.configure_errorhandlers(self.errorhandlers)
 
@@ -47,8 +47,8 @@ class App(Flask):
         self.configure_packages(self.packages)
 
     def configure_extensions(self, extensions):
-        for extension in extensions.__dict__.items():
-            if hasattr(extension, 'init_app'):
+        for extension in extensions.__dict__.values():
+            if not inspect.isclass(extension) and hasattr(extension, 'init_app'):
                 extension.init_app(self)
 
     def configure_packages(self, packages):
