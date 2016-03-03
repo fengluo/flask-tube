@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import ujson as json
 import flask_sqlalchemy
 
 from flask import Response
 
+from .base import json
 
 def render_schema(model, schema=None):
     headers = {}
