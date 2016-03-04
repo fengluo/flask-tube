@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os
+import logging
 import inspect
+from logging.handlers import SMTPHandler, RotatingFileHandler
 from werkzeug.utils import import_string, find_modules
 from flask import Flask, Blueprint
 
@@ -46,6 +48,8 @@ class App(Flask):
         # register module
         self.configure_packages(self.packages)
 
+        self.configure_logging()
+
     def configure_extensions(self, extensions):
         for extension in extensions.__dict__.values():
             if not inspect.isclass(extension) and hasattr(extension, 'init_app'):
@@ -71,3 +75,45 @@ class App(Flask):
     def configure_errorhandlers(self, errorhandlers):
         for errorhandler in errorhandlers:
             errorhandler(self)
+
+    def configure_logging(self):
+        mail_handler = \
+            SMTPHandler(self.config['MAIL_SERVER'],
+                        self.config['DEFAULT_MAIL_SENDER'],
+                        self.config['ADMINS'], 
+                        'selflication error',
+                        (
+                            self.config['MAIL_USERNAME'],
+                            self.config['MAIL_PASSWORD'],
+                        ))
+
+        mail_handler.setLevel(logging.ERROR)
+        self.logger.addHandler(mail_handler)
+
+        formatter = logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s '
+            '[in %(pathname)s:%(lineno)d]')
+
+        debug_log = os.path.join(self.root_path, 
+                                 self.config['DEBUG_LOG'])
+
+        debug_file_handler = \
+            RotatingFileHandler(debug_log,
+                                maxBytes=100000,
+                                backupCount=10)
+
+        debug_file_handler.setLevel(logging.DEBUG)
+        debug_file_handler.setFormatter(formatter)
+        self.logger.addHandler(debug_file_handler)
+
+        error_log = os.path.join(self.root_path, 
+                                 self.config['ERROR_LOG'])
+
+        error_file_handler = \
+            RotatingFileHandler(error_log,
+                                maxBytes=100000,
+                                backupCount=10)
+
+        error_file_handler.setLevel(logging.ERROR)
+        error_file_handler.setFormatter(formatter)
+        self.logger.addHandler(error_file_handler)
